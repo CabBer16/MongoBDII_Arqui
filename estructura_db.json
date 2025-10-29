@@ -1,0 +1,73 @@
+{
+  "_id": "ObjectId('...a1')",
+  "nombre_completo": "Gerson Jared Villagrana Ponce",
+  "email": "gerson@example.com",
+  "password_hash": "bcrypt_hash_string...",
+  "telefono": "3312345678",
+  "direcciones": [
+    {
+      "alias": "Casa",
+      "calle": "Av. Siempre Viva 123",
+      "colonia": "Centro",
+      "cp": "45000",
+      "ciudad": "Zapopan"
+    },
+    {
+      "alias": "Oficina",
+      "calle": "Av. Patria 456",
+      "colonia": "Mirador",
+      "cp": "45100",
+      "ciudad": "Guadalajara"
+    }
+  ],
+  "fecha_registro": "ISODate('2025-10-28T...')"
+}
+
+{
+  "_id": "ObjectId('...b1')",
+  "nombre": "Mochilaquil XYZ",
+  "descripcion": "Mochila deportiva resistente al agua con múltiples compartimentos.",
+  "precio": 35000.50,
+  "stock": 25,
+  "categoria": "Electrónica",
+  "sku": "MOC-XYZ-9000",
+  "url_imagen": "https://example.com/images/mochila.jpg",
+  "especificaciones": {
+    "marca": "XYZ",
+    "peso_kg": 2.1,
+    "dimensiones_cm": {
+      "alto": 50,
+      "ancho": 30,
+      "profundidad": 20
+    },
+  },
+  "publicado": true
+}
+
+{
+  "_id": "ObjectId('...c1')",
+
+  "usuario_id": "ObjectId('...a1')", 
+  "fecha_creacion": "ISODate('2025-10-28T...')" ,
+  "estado": "pendiente_pago", 
+  "items": [
+    {
+    
+      "producto_id": "ObjectId('...b1')", 
+      "nombre_producto": "Laptop Gamer XYZ", 
+      "cantidad": 1,
+      "precio_compra": 35000.50
+    },
+    
+  ],
+  "direccion_envio": { 
+    "calle": "Av. Siempre Viva 123",
+    "colonia": "Centro",
+    "cp": "45000",
+    "ciudad": "Zapopan"
+  },
+  "subtotal": 35000.50,
+  "envio": 150.00,
+  "total": 35150.50,
+  "id_pago_paypal": "PAYPAL_TRANSACTION_ID_..." 
+}
