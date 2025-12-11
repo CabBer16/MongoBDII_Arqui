@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package ecommerce;
+
+// Definición del servicio (Los métodos del CRUD)
+service UsuarioService {
+    rpc CrearUsuario (UsuarioRequest) returns (UsuarioResponse);
+    rpc ObtenerUsuario (UsuarioIdRequest) returns (UsuarioResponse);
+    rpc ActualizarUsuario (UsuarioUpdateRequest) returns (UsuarioResponse);
+    rpc EliminarUsuario (UsuarioIdRequest) returns (DeleteResponse);
+    rpc ListarUsuarios (Empty) returns (ListaUsuariosResponse);
+}
+
+// Mensajes (La estructura de los datos)
+message UsuarioRequest {
+    string nombre_completo = 1;
+    string email = 2;
+    string password_hash = 3;
+    // Simplificamos direcciones para el ejemplo, pero podrías anidar mensajes
+}
+
+message UsuarioResponse {
+    string id = 1;
+    string nombre_completo = 2;
+    string email = 3;
+}
+
+message UsuarioUpdateRequest {
+    string id = 1;
+    string nombre_completo = 2;
+    string email = 3;
+}
+
+message UsuarioIdRequest {
+    string id = 1;
+}
+
+message DeleteResponse {
+    string mensaje = 1;
+}
+
+message ListaUsuariosResponse {
+    repeated UsuarioResponse usuarios = 1;
+}
+
+message Empty {}

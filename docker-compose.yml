@@ -1,16 +1,13 @@
 services:
-  flask-app:
+  grpc-app:  # Cambié el nombre de flask-app a grpc-app
     build: .
     ports:
-      - "5000:5000"
-    environment:
-      - MONGO_URI=mongodb://mongodb:27017/LPFM
+      - "50051:50051"
     links:
       - mongodb
     depends_on:
       - mongodb
       
-
   mongodb:
     image: mongo:latest
     ports:

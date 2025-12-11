@@ -1,72 +1,64 @@
-from flask import Flask, jsonify, request
+from concurrent import futures
+import grpc
+import ecommerce_pb2
+import ecommerce_pb2_grpc
 from pymongo import MongoClient
-from bson.objectid import ObjectId # Importante para buscar por _id si fuera necesario
-import json
+from bson.objectid import ObjectId
 
-app = Flask(__name__)
-
-# Conexión al contenedor de MongoDB
-# 'mongodb' es el nombre del servicio en docker-compose.yml
+# Conexión a MongoDB
 client = MongoClient('mongodb://root:root@mongodb:27017')
 db = client.LPFM
-mycollection = db.UsuariosDB
+collection = db.usuarios
 
-@app.route('/')
-def home():
-    return "Welcome to the Flask MongoDB API!"
+class UsuarioService(ecommerce_pb2_grpc.UsuarioServiceServicer):
 
-# --- LEER (READ) ---
-# Esto ya lo tenías
-@app.route('/items', methods=['GET'])
-def get_items():
-    items = []
-    # Iteramos para convertir el ObjectId a string y que sea serializable en JSON
-    for item in mycollection.find():
-        item['_id'] = str(item['_id'])
-        items.append(item)
-    return jsonify(items)
+    def CrearUsuario(self, request, context):
+        nuevo_usuario = {
+            "nombre_completo": request.nombre_completo,
+            "email": request.email,
+            "password_hash": request.password_hash,
+            "direcciones": []
+        }
+        res = collection.insert_one(nuevo_usuario)
+        return ecommerce_pb2.UsuarioResponse(id=str(res.inserted_id), nombre_completo=request.nombre_completo, email=request.email)
 
-# --- AGREGAR (CREATE) ---
-# Esto ya lo tenías
-@app.route('/items', methods=['POST'])
-def add_item():
-    data = request.get_json()
-    if data and 'name' in data and 'email' in data:
-        mycollection.insert_one(data)
-        return jsonify({"message": "Item added successfully"}), 201
-    return jsonify({"message": "Invalid data: 'name' and 'email' are required"}), 400
+    def ObtenerUsuario(self, request, context):
+        usuario = collection.find_one({"_id": ObjectId(request.id)})
+        if usuario:
+            return ecommerce_pb2.UsuarioResponse(id=str(usuario["_id"]), nombre_completo=usuario.get("nombre_completo"), email=usuario.get("email"))
+        else:
+            context.set_code(grpc.StatusCode.NOT_FOUND)
+            return ecommerce_pb2.UsuarioResponse()
 
-# --- ACTUALIZAR (UPDATE) ---
-# Ruta nueva: Actualiza el nombre de un usuario buscando por email
-@app.route('/items', methods=['PUT'])
-def update_item():
-    data = request.get_json()
-    if data and 'email' in data and 'newName' in data:
-        query = { "email": data['email'] }
-        new_values = { "$set": { "name": data['newName'] } }
-        
-        result = mycollection.update_one(query, new_values)
-        
+    def ListarUsuarios(self, request, context):
+        usuarios = []
+        for u in collection.find():
+            usuarios.append(ecommerce_pb2.UsuarioResponse(id=str(u["_id"]), nombre_completo=u.get("nombre_completo", ""), email=u.get("email", "")))
+        return ecommerce_pb2.ListaUsuariosResponse(usuarios=usuarios)
+
+    def ActualizarUsuario(self, request, context):
+        filtro = {"_id": ObjectId(request.id)}
+        nuevos_datos = {"$set": {"nombre_completo": request.nombre_completo, "email": request.email}}
+        result = collection.update_one(filtro, nuevos_datos)
         if result.matched_count > 0:
-            return jsonify({"message": "Item updated successfully"}), 200
-        else:
-            return jsonify({"message": "Item not found"}), 404
-    return jsonify({"message": "Invalid data: 'email' and 'newName' are required"}), 400
+            return ecommerce_pb2.UsuarioResponse(id=request.id, nombre_completo=request.nombre_completo, email=request.email)
+        context.set_code(grpc.StatusCode.NOT_FOUND)
+        return ecommerce_pb2.UsuarioResponse()
 
-# --- ELIMINAR (DELETE) ---
-# Ruta nueva: Elimina un usuario buscando por email
-@app.route('/items', methods=['DELETE'])
-def delete_item():
-    data = request.get_json()
-    if data and 'email' in data:
-        query = { "email": data['email'] }
-        result = mycollection.delete_one(query)
-        
+    def EliminarUsuario(self, request, context):
+        result = collection.delete_one({"_id": ObjectId(request.id)})
         if result.deleted_count > 0:
-            return jsonify({"message": "Item deleted successfully"}), 200
-        else:
-            return jsonify({"message": "Item not found"}), 404
-    return jsonify({"message": "Invalid data: 'email' is required"}), 400
+            return ecommerce_pb2.DeleteResponse(mensaje="Usuario eliminado")
+        context.set_code(grpc.StatusCode.NOT_FOUND)
+        return ecommerce_pb2.DeleteResponse(mensaje="No encontrado")
+
+def serve():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    ecommerce_pb2_grpc.add_UsuarioServiceServicer_to_server(UsuarioService(), server)
+    server.add_insecure_port('[::]:50051')
+    print("Servidor gRPC corriendo en el puerto 50051...")
+    server.start()
+    server.wait_for_termination()
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    serve()

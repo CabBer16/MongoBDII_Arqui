@@ -7,7 +7,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-ENV FLASK_APP=app.py
-EXPOSE 5000
+# Generar archivos gRPC
+RUN python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. ecommerce.proto
 
-CMD ["flask", "run", "--host=0.0.0.0"]
+EXPOSE 50051
+
+# IMPORTANTE: Ejecutamos app.py, no grpc_server.py
+CMD ["python", "app.py"]
